@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChromaLab</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: { 900: '#090d16', 800: '#111726', 700: '#1d263b', 600: '#2d3852' },
+                        accent: { 500: '#6366f1', 600: '#4f46e5' }
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #090d16; }
+        ::-webkit-scrollbar-thumb { background: #1d263b; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #2d3852; }
+        input[type=range] { -webkit-appearance: none; appearance: none; background: transparent; }
+        input[type=range]:focus { outline: none; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 6px; cursor: pointer; background: #1d263b; border-radius: 3px; }
+        input[type=range]::-webkit-slider-thumb { height: 18px; width: 18px; border-radius: 50%; background: #6366f1; cursor: pointer; -webkit-appearance: none; appearance: none; margin-top: -6px; box-shadow: 0 0 10px rgba(99, 102, 241, 0.5); transition: all 0.15s ease; }
+        input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.15); background: #818cf8; }
+        input[type=range]::-moz-range-track { width: 100%; height: 6px; cursor: pointer; background: #1d263b; border-radius: 3px; }
+        input[type=range]::-moz-range-thumb { height: 18px; width: 18px; border: none; border-radius: 50%; background: #6366f1; cursor: pointer; box-shadow: 0 0 10px rgba(99, 102, 241, 0.5); transition: all 0.15s ease; }
+        input[type=range]::-moz-range-thumb:hover { transform: scale(1.15); background: #818cf8; }
+        .color-picker-wrapper input[type="color"] { -webkit-appearance: none; appearance: none; border: none; width: 100%; height: 100%; cursor: pointer; background: transparent; }
+        .color-picker-wrapper input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+        .color-picker-wrapper input[type="color"]::-webkit-color-swatch { border: none; border-radius: 0.5rem; }
+    </style>
+</head>
+<body class="bg-dark-900 text-gray-200 font-sans min-h-screen flex flex-col antialiased selection:bg-accent-500 selection:text-white">
+    <header class="border-b border-dark-700/60 bg-dark-800/80 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#E11D48] to-[#F43F5E] flex items-center justify-center text-white shadow-lg shadow-[#F43F5E]/30">
+                    <i class="fa-solid fa-eye-dropper text-base"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-none text-white tracking-wide">Chroma<span class="text-[#F43F5E]">Lab</span></h1>                    
+                    <p id="i18n-subtitle" class="text-xs text-gray-400 mt-0.5">CSS Color Engine, Conversion & Harmony</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <div class="relative flex items-center">
+                    <i class="fa-solid fa-globe text-gray-400 mr-2 text-sm"></i>
+                    <select id="lang-selector" onchange="changeLanguage(this.value)" class="bg-dark-900 border border-dark-700 text-xs text-gray-300 rounded-lg px-2.5 py-1 focus:outline-none focus:border-accent-500 cursor-pointer">
+                        <option value="auto">🌐 Auto</option>
+                        <option value="en">English</option>
+                        <option value="es">Español</option>                        
+                        <option value="fr">Français</option>
+                        <option value="de">Deutsch</option>
+                        <option value="pt">Português</option>
+                        <option value="it">Italiano</option>
+                        <option value="zh">中文</option>
+                        <option value="ja">日本語</option>
+                    </select>
+                </div>
+                <span class="hidden sm:inline-block text-xs font-mono bg-dark-700/50 text-gray-400 px-3 py-1 rounded-full border border-dark-700">OKLCH / HSL / RGB / HEX</span>
+            </div>
+        </div>
+    </header>
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <div id="toast" class="fixed bottom-6 right-6 bg-emerald-600 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 transition-all duration-300 opacity-0 translate-y-4 pointer-events-none z-50">
+            <i class="fa-solid fa-check-circle text-lg"></i>
+            <span id="toast-message" class="font-medium text-sm">Copied to clipboard</span>
+        </div>
+        <section class="bg-dark-800/60 border border-dark-700/80 rounded-2xl p-6 shadow-xl">
+            <div class="flex flex-col lg:flex-row items-center justify-between gap-6">
+                <div class="flex items-center space-x-5 w-full lg:w-auto">
+                    <div class="color-picker-wrapper w-20 h-20 sm:w-24 sm:h-24 rounded-2xl shadow-2xl border-2 border-dark-600/60 overflow-hidden relative group shrink-0">
+                        <input type="color" id="main-color-picker" value="#6366f1">
+                    </div>
+                    <div class="space-y-1 flex-1">
+                        <span id="i18n-selected-color" class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Selected Color</span>
+                        <div class="flex items-center space-x-3">
+                            <input type="text" id="hex-input" value="#6366F1" class="bg-dark-900 border border-dark-700 text-white font-mono text-xl sm:text-2xl font-bold rounded-xl px-3 py-1.5 w-36 uppercase focus:outline-none focus:border-accent-500">
+                            <button onclick="copyToClipboard(document.getElementById('hex-input').value, 'HEX')" class="p-2.5 text-gray-400 hover:text-white bg-dark-700/50 hover:bg-dark-700 rounded-xl transition-all" title="Copy HEX">
+                                <i class="fa-regular fa-copy text-base"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="w-full lg:w-auto flex flex-col items-start lg:items-end space-y-2">
+                    <span id="i18n-example-palettes" class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Example Palettes</span>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="setBaseColor('#6366f1')" class="w-8 h-8 rounded-lg bg-[#6366f1] border border-white/10 hover:scale-110 transition-all"></button>
+                        <button onclick="setBaseColor('#10b981')" class="w-8 h-8 rounded-lg bg-[#10b981] border border-white/10 hover:scale-110 transition-all"></button>
+                        <button onclick="setBaseColor('#f43f5e')" class="w-8 h-8 rounded-lg bg-[#f43f5e] border border-white/10 hover:scale-110 transition-all"></button>
+                        <button onclick="setBaseColor('#f59e0b')" class="w-8 h-8 rounded-lg bg-[#f59e0b] border border-white/10 hover:scale-110 transition-all"></button>
+                        <button onclick="setBaseColor('#06b6d4')" class="w-8 h-8 rounded-lg bg-[#06b6d4] border border-white/10 hover:scale-110 transition-all"></button>
+                        <button onclick="setBaseColor('#ec4899')" class="w-8 h-8 rounded-lg bg-[#ec4899] border border-white/10 hover:scale-110 transition-all"></button>
+                    </div>
+                </div>
+            </div>
+        </section>
+             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div class="lg:col-span-7 bg-dark-800/60 border border-dark-700/80 rounded-2xl p-6 shadow-xl space-y-5">
+                <h2 class="text-base font-semibold text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-code text-accent-500"></i>
+                    <span id="i18n-web-formats">Web Color Formats</span>
+                </h2>
+                <div class="space-y-3 font-mono text-sm">
+                    <div class="bg-dark-900/90 border border-dark-700 p-3.5 rounded-xl flex items-center justify-between group">
+                        <div>
+                            <span id="i18n-hex-std" class="text-xs text-gray-500 block font-sans font-medium">HEX (Standard)</span>
+                            <span id="format-hex" class="text-white font-semibold">#6366F1</span>
+                        </div>
+                        <button onclick="copyToClipboard(document.getElementById('format-hex').innerText, 'HEX')" class="i18n-copy-btn px-3 py-1.5 text-xs bg-dark-800 hover:bg-dark-700 text-gray-300 rounded-lg border border-dark-700 transition-all">Copy</button>
+                    </div>
+                    <div class="bg-dark-900/90 border border-dark-700 p-3.5 rounded-xl flex items-center justify-between group">
+                        <div>
+                            <span id="i18n-rgb-desc" class="text-xs text-gray-500 block font-sans font-medium">RGB (Red, Green, Blue)</span>
+                            <span id="format-rgb" class="text-accent-400 font-semibold">rgb(99, 102, 241)</span>
+                        </div>
+                        <button onclick="copyToClipboard(document.getElementById('format-rgb').innerText, 'RGB')" class="i18n-copy-btn px-3 py-1.5 text-xs bg-dark-800 hover:bg-dark-700 text-gray-300 rounded-lg border border-dark-700 transition-all">Copy</button>
+                    </div>
+                    <div class="bg-dark-900/90 border border-dark-700 p-3.5 rounded-xl flex items-center justify-between group">
+                        <div>
+                            <span id="i18n-hsl-desc" class="text-xs text-gray-500 block font-sans font-medium">HSL (Hue, Saturation, Lightness)</span>
+                            <span id="format-hsl" class="text-emerald-400 font-semibold">hsl(239, 84%, 67%)</span>
+                        </div>
+                        <button onclick="copyToClipboard(document.getElementById('format-hsl').innerText, 'HSL')" class="i18n-copy-btn px-3 py-1.5 text-xs bg-dark-800 hover:bg-dark-700 text-gray-300 rounded-lg border border-dark-700 transition-all">Copy</button>
+                    </div>
+                    <div class="bg-dark-900/90 border border-dark-700 p-3.5 rounded-xl flex items-center justify-between group">
+                        <div>
+                            <span class="text-xs text-accent-500 font-sans font-semibold flex items-center space-x-1">
+                                <span id="i18n-oklch-desc">OKLCH (Modern Uniform CSS)</span>
+                                <i class="fa-solid fa-sparkles text-[10px]"></i>
+                            </span>
+                            <span id="format-oklch" class="text-indigo-300 font-semibold">oklch(0.58 0.21 278)</span>
+                        </div>
+                        <button onclick="copyToClipboard(document.getElementById('format-oklch').innerText, 'OKLCH')" class="i18n-copy-btn px-3 py-1.5 text-xs bg-dark-800 hover:bg-dark-700 text-gray-300 rounded-lg border border-dark-700 transition-all">Copy</button>
+                    </div>
+                </div>
+                <div class="pt-4 border-t border-dark-700/60 space-y-4">
+                    <h3 id="i18n-manual-tuning" class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Manual Fine Tuning (HSL)</h3>
+                    <div>
+                        <div class="flex justify-between text-xs font-mono text-gray-400 mb-1">
+                            <span><span id="i18n-hue-label">Hue:</span> <strong id="hue-val" class="text-white">239°</strong></span>
+                        </div>
+                        <input type="range" id="slider-hue" min="0" max="360" value="239" class="w-full">
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-xs font-mono text-gray-400 mb-1">
+                            <span><span id="i18n-sat-label">Saturation:</span> <strong id="sat-val" class="text-white">84%</strong></span>
+                        </div>
+                        <input type="range" id="slider-sat" min="0" max="100" value="84" class="w-full">
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-xs font-mono text-gray-400 mb-1">
+                            <span><span id="i18n-light-label">Lightness:</span> <strong id="light-val" class="text-white">67%</strong></span>
+                        </div>
+                        <input type="range" id="slider-light" min="0" max="100" value="67" class="w-full">
+                    </div>
+                </div>
+            </div>
+            <div class="lg:col-span-5 bg-dark-800/60 border border-dark-700/80 rounded-2xl p-6 shadow-xl space-y-5 flex flex-col justify-between">
+                <div class="space-y-4">
+                    <h2 class="text-base font-semibold text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-universal-access text-accent-500"></i>
+                        <span id="i18n-accessibility-title">Contrast & Accessibility (WCAG)</span>
+                    </h2>
+                    <p id="i18n-accessibility-desc" class="text-xs text-gray-400 leading-relaxed">Check if text is fully legible over the selected background color.</p>
+                    <div class="grid grid-cols-1 gap-3 pt-2">
+                        <div id="card-white-text" class="p-4 rounded-xl flex items-center justify-between transition-all" style="background-color: #6366f1; color: #ffffff;">
+                            <div>
+                                <span id="i18n-white-text-label" class="font-bold text-sm block">White Text (#FFFFFF)</span>
+                                <span id="ratio-white" class="text-xs font-mono opacity-90">Ratio: 4.5:1</span>
+                            </div>
+                            <span id="badge-white" class="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wide bg-black/30">AA</span>
+                        </div>
+                        <div id="card-black-text" class="p-4 rounded-xl flex items-center justify-between transition-all" style="background-color: #6366f1; color: #000000;">
+                            <div>
+                                <span id="i18n-black-text-label" class="font-bold text-sm block">Black Text (#000000)</span>
+                                <span id="ratio-black" class="text-xs font-mono opacity-90">Ratio: 4.6:1</span>
+                            </div>
+                            <span id="badge-black" class="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wide bg-white/30">AA</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-dark-900/80 p-4 rounded-xl border border-dark-700 text-xs text-gray-300 flex items-start space-x-3">
+                    <i class="fa-solid fa-circle-info text-accent-500 text-base mt-0.5"></i>
+                    <p id="contrast-recommendation">Using **white text** with this background is recommended to meet WCAG 2.1 standards.</p>
+                </div>
+            </div>
+        </div>
+        <section class="bg-dark-800/60 border border-dark-700/80 rounded-2xl p-6 shadow-xl space-y-6">
+            <h2 class="text-base font-semibold text-white flex items-center space-x-2">
+                <i class="fa-solid fa-swatchbook text-accent-500"></i>
+                <span id="i18n-harmonies-title">Color Harmony Calculator</span>
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="space-y-2">
+                    <span id="i18n-comp-label" class="text-xs font-semibold text-gray-400 uppercase tracking-wider block">Complementary</span>
+                    <div id="palette-complementary" class="grid grid-cols-2 h-20 rounded-xl overflow-hidden border border-dark-700 shadow-md"></div>
+                </div>
+                <div class="space-y-2">
+                    <span id="i18n-analog-label" class="text-xs font-semibold text-gray-400 uppercase tracking-wider block">Analogous</span>
+                    <div id="palette-analogous" class="grid grid-cols-3 h-20 rounded-xl overflow-hidden border border-dark-700 shadow-md"></div>
+                </div>
+                <div class="space-y-2">
+                    <span id="i18n-triad-label" class="text-xs font-semibold text-gray-400 uppercase tracking-wider block">Triadic</span>
+                    <div id="palette-triadic" class="grid grid-cols-3 h-20 rounded-xl overflow-hidden border border-dark-700 shadow-md"></div>
+                </div>
+                <div class="space-y-2">
+                    <span id="i18n-mono-label" class="text-xs font-semibold text-gray-400 uppercase tracking-wider block">Monochromatic</span>
+                    <div id="palette-monochromatic" class="grid grid-cols-4 h-20 rounded-xl overflow-hidden border border-dark-700 shadow-md"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer class="border-t border-dark-700/60 bg-dark-800/40 py-4 mt-auto">
+        <div id="i18n-footer" class="max-w-7xl mx-auto px-4 text-center text-xs text-gray-500">
+            ChromaLab - Lightweight high-performance color tool.
+        </div>
+    </footer>
+<script>
+    const translations = {
+        es: {
+            subtitle: "Motor de Color, Conversión y Armonía CSS",
+            selectedColor: "Color Seleccionado",
+            examplePalettes: "Paletas de Ejemplo",
+            webFormats: "Formatos de Color Web",
+            hexStd: "HEX (Estándar)",
+            rgbDesc: "RGB (Red, Green, Blue)",
+            hslDesc: "HSL (Hue, Saturation, Lightness)",
+            oklchDesc: "OKLCH (CSS Moderno Uniforme)",
+            copyBtn: "Copiar",
+            manualTuning: "Ajuste Fino Manual (HSL)",
+            hueLabel: "Tono (Hue):",
+            satLabel: "Saturación:",
+            lightLabel: "Luminosidad:",
+            accessibilityTitle: "Contraste & Accesibilidad (WCAG)",
+            accessibilityDesc: "Verifica si el texto es totalmente legible sobre el color seleccionado como fondo.",
+            whiteTextLabel: "Texto Blanco (#FFFFFF)",
+            blackTextLabel: "Texto Negro (#000000)",
+            recommendationWhite: "Se recomienda usar **texto blanco** con este fondo para cumplir los estándares WCAG 2.1.",
+            recommendationBlack: "Se recomienda usar **texto negro** con este fondo para cumplir los estándares WCAG 2.1.",
+            harmoniesTitle: "Calculadora de Armonías de Color",
+            compLabel: "Complementario",
+            analogLabel: "Análogos",
+            triadLabel: "Tríada",
+            monoLabel: "Monocromático",
+            footer: "ChromaLab - Herramienta ligera de color de alto rendimiento.",
+            toastCopied: "copiado al portapapeles",
+            pass: "AA / AAA",
+            low: "Bajo"
+        },
+        en: {
+            subtitle: "CSS Color Engine, Conversion & Harmony",
+            selectedColor: "Selected Color",
+            examplePalettes: "Example Palettes",
+            webFormats: "Web Color Formats",
+            hexStd: "HEX (Standard)",
+            rgbDesc: "RGB (Red, Green, Blue)",
+            hslDesc: "HSL (Hue, Saturation, Lightness)",
+            oklchDesc: "OKLCH (Modern Uniform CSS)",
+            copyBtn: "Copy",
+            manualTuning: "Manual Fine Tuning (HSL)",
+            hueLabel: "Hue:",
+            satLabel: "Saturation:",
+            lightLabel: "Lightness:",
+            accessibilityTitle: "Contrast & Accessibility (WCAG)",
+            accessibilityDesc: "Check if text is fully legible over the selected background color.",
+            whiteTextLabel: "White Text (#FFFFFF)",
+            blackTextLabel: "Black Text (#000000)",
+            recommendationWhite: "Using **white text** with this background is recommended to meet WCAG 2.1 standards.",
+            recommendationBlack: "Using **black text** with this background is recommended to meet WCAG 2.1 standards.",
+            harmoniesTitle: "Color Harmony Calculator",
+            compLabel: "Complementary",
+            analogLabel: "Analogous",
+            triadLabel: "Triadic",
+            monoLabel: "Monochromatic",
+            footer: "ChromaLab - Lightweight high-performance color tool.",
+            toastCopied: "copied to clipboard",
+            pass: "AA / AAA",
+            low: "Low"
+        },
+        fr: {
+            subtitle: "Moteur de Couleur, Conversion & Harmonie CSS",
+            selectedColor: "Couleur Sélectionnée",
+            examplePalettes: "Palettes d'Exemple",
+            webFormats: "Formats de Couleur Web",
+            hexStd: "HEX (Standard)",
+            rgbDesc: "RGB (Rouge, Vert, Bleu)",
+            hslDesc: "HSL (Teinte, Saturation, Luminosité)",
+            oklchDesc: "OKLCH (CSS Moderne Uniforme)",
+            copyBtn: "Copier",
+            manualTuning: "Réglage Manuel Fin (HSL)",
+            hueLabel: "Teinte:",
+            satLabel: "Saturation:",
+            lightLabel: "Luminosité:",
+            accessibilityTitle: "Contraste & Accessibilité (WCAG)",
+            accessibilityDesc: "Vérifiez si le texte est lisible sur la couleur de fond sélectionnée.",
+            whiteTextLabel: "Texte Blanc (#FFFFFF)",
+            blackTextLabel: "Texte Noir (#000000)",
+            recommendationWhite: "Il est recommandé d'utiliser du **texte blanc** pour respecter les normes WCAG 2.1.",
+            recommendationBlack: "Il est recommandé d'utiliser du **texte noir** pour respecter les normes WCAG 2.1.",
+            harmoniesTitle: "Calculateur d'Harmonies de Couleurs",
+            compLabel: "Complémentaire",
+            analogLabel: "Analogues",
+            triadLabel: "Triade",
+            monoLabel: "Monochromatique",
+            footer: "ChromaLab - Outil de couleur léger et performant.",
+            toastCopied: "copié dans le presse-papiers",
+            pass: "AA / AAA",
+            low: "Faible"
+        },
+        de: {
+            subtitle: "CSS-Farbengine, Konvertierung & Harmonie",
+            selectedColor: "Ausgewählte Farbe",
+            examplePalettes: "Beispielpaletten",
+            webFormats: "Web-Farbformate",
+            hexStd: "HEX (Standard)",
+            rgbDesc: "RGB (Rot, Grün, Blau)",
+            hslDesc: "HSL (Farbton, Sättigung, Helligkeit)",
+            oklchDesc: "OKLCH (Modernes einheitliches CSS)",
+            copyBtn: "Kopieren",
+            manualTuning: "Manuelle Feineinstellung (HSL)",
+            hueLabel: "Farbton:",
+            satLabel: "Sättigung:",
+            lightLabel: "Helligkeit:",
+            accessibilityTitle: "Kontrast & Barrierefreiheit (WCAG)",
+            accessibilityDesc: "Überprüfen Sie, ob der Text auf der gewählten Hintergrundfarbe gut lesbar ist.",
+            whiteTextLabel: "Weißer Text (#FFFFFF)",
+            blackTextLabel: "Schwarzer Text (#000000)",
+            recommendationWhite: "**Weißer Text** wird empfohlen, um die WCAG 2.1-Standards zu erfüllen.",
+            recommendationBlack: "**Schwarzer Text** wird empfohlen, um die WCAG 2.1-Standards zu erfüllen.",
+            harmoniesTitle: "Farbharmonie-Rechner",
+            compLabel: "Komplementär",
+            analogLabel: "Analog",
+            triadLabel: "Triadisch",
+            monoLabel: "Monochromatisch",
+            footer: "ChromaLab - Leichtes Hochleistungs-Farbwerkzeug.",
+            toastCopied: "in die Zwischenablage kopiert",
+            pass: "AA / AAA",
+            low: "Niedrig"
+        },
+        pt: {
+            subtitle: "Motor de Cor, Conversão e Harmonia CSS",
+            selectedColor: "Cor Selecionada",
+            examplePalettes: "Paletas de Exemplo",
+            webFormats: "Formatos de Cor Web",
+            hexStd: "HEX (Padrão)",
+            rgbDesc: "RGB (Vermelho, Verde, Azul)",
+            hslDesc: "HSL (Matiz, Saturação, Luminosidade)",
+            oklchDesc: "OKLCH (CSS Moderno Uniforme)",
+            copyBtn: "Copiar",
+            manualTuning: "Ajuste Fino Manual (HSL)",
+            hueLabel: "Matiz:",
+            satLabel: "Saturação:",
+            lightLabel: "Luminosidade:",
+            accessibilityTitle: "Contraste e Acessibilidade (WCAG)",
+            accessibilityDesc: "Verifique se o texto está legível sobre a cor de fundo selecionada.",
+            whiteTextLabel: "Texto Branco (#FFFFFF)",
+            blackTextLabel: "Texto Preto (#000000)",
+            recommendationWhite: "Recomenda-se usar **texto branco** para cumprir os padrões WCAG 2.1.",
+            recommendationBlack: "Recomenda-se usar **texto preto** para cumprir os padrões WCAG 2.1.",
+            harmoniesTitle: "Calculadora de Harmonias de Cores",
+            compLabel: "Complementar",
+            analogLabel: "Análogas",
+            triadLabel: "Tríade",
+            monoLabel: "Monocromático",
+            footer: "ChromaLab - Ferramenta leve de cor de alto desempenho.",
+            toastCopied: "copiado para a área de transferência",
+            pass: "AA / AAA",
+            low: "Baixo"
+        },
+        it: {
+            subtitle: "Motore Colore, Conversione e Armonia CSS",
+            selectedColor: "Colore Selezionato",
+            examplePalettes: "Tavolozze di Esempio",
+            webFormats: "Formati Colore Web",
+            hexStd: "HEX (Standard)",
+            rgbDesc: "RGB (Rosso, Verde, Blu)",
+            hslDesc: "HSL (Tonalità, Saturazione, Luminosità)",
+            oklchDesc: "OKLCH (CSS Moderno Uniforme)",
+            copyBtn: "Copia",
+            manualTuning: "Regolazione Manuale (HSL)",
+            hueLabel: "Tonalità:",
+            satLabel: "Saturazione:",
+            lightLabel: "Luminosità:",
+            accessibilityTitle: "Contrasto e Accessibilità (WCAG)",
+            accessibilityDesc: "Verifica se il testo è leggibile sullo sfondo selezionato.",
+            whiteTextLabel: "Testo Bianco (#FFFFFF)",
+            blackTextLabel: "Testo Nero (#000000)",
+            recommendationWhite: "Si consiglia di utilizzare **testo bianco** per soddisfare gli standard WCAG 2.1.",
+            recommendationBlack: "Si consiglia di utilizzare **testo nero** per soddisfare gli standard WCAG 2.1.",
+            harmoniesTitle: "Calcolatore Armonia Colori",
+            compLabel: "Complementare",
+            analogLabel: "Analoghi",
+            triadLabel: "Triade",
+            monoLabel: "Monocromatico",
+            footer: "ChromaLab - Strumento colore leggero e performante.",
+            toastCopied: "copiato negli appunti",
+            pass: "AA / AAA",
+            low: "Basso"
+        },
+        zh: {
+            subtitle: "CSS 颜色引擎、转换与和谐度计算",
+            selectedColor: "已选颜色",
+            examplePalettes: "示例调色板",
+            webFormats: "Web 颜色格式",
+            hexStd: "HEX (标准)",
+            rgbDesc: "RGB (红, 绿, 蓝)",
+            hslDesc: "HSL (色调, 饱和度, 亮度)",
+            oklchDesc: "OKLCH (现代均匀 CSS)",
+            copyBtn: "复制",
+            manualTuning: "手动微调 (HSL)",
+            hueLabel: "色调:",
+            satLabel: "饱和度:",
+            lightLabel: "亮度:",
+            accessibilityTitle: "对比度与无障碍体验 (WCAG)",
+            accessibilityDesc: "检查文字在所选背景色上是否清晰易读。",
+            whiteTextLabel: "白色文本 (#FFFFFF)",
+            blackTextLabel: "黑色文本 (#000000)",
+            recommendationWhite: "建议在此背景下使用**白色文本**以符合 WCAG 2.1 标准。",
+            recommendationBlack: "建议在此背景下使用**黑色文本**以符合 WCAG 2.1 标准。",
+            harmoniesTitle: "色彩和谐度计算器",
+            compLabel: "互补色",
+            analogLabel: "近似色",
+            triadLabel: "三基色",
+            monoLabel: "单色系",
+            footer: "ChromaLab - 轻量级高性能色彩工具。",
+            toastCopied: "已复制到剪贴板",
+            pass: "AA / AAA",
+            low: "较差"
+        },
+        ja: {
+            subtitle: "CSS カラーエンジン、変換＆ハーモニー",
+            selectedColor: "選択された色",
+            examplePalettes: "サンプルパレット",
+            webFormats: "Webカラーフォーマット",
+            hexStd: "HEX (標準)",
+            rgbDesc: "RGB (赤, 緑, 青)",
+            hslDesc: "HSL (色相, 彩度, 輝度)",
+            oklchDesc: "OKLCH (現代的均一CSS)",
+            copyBtn: "コピー",
+            manualTuning: "手動微調整 (HSL)",
+            hueLabel: "色相:",
+            satLabel: "彩度:",
+            lightLabel: "輝度:",
+            accessibilityTitle: "コントラスト＆アクセシビリティ (WCAG)",
+            accessibilityDesc: "選択した背景色上でテキストが読みやすいか確認します。",
+            whiteTextLabel: "白文字 (#FFFFFF)",
+            blackTextLabel: "黒文字 (#000000)",
+            recommendationWhite: "WCAG 2.1規格を満たすため**白文字**の使用を推奨します。",
+            recommendationBlack: "WCAG 2.1規格を満たすため**黒文字**の使用を推奨します。",
+            harmoniesTitle: "カラーハーモニー計算機",
+            compLabel: "補色",
+            analogLabel: "類似色",
+            triadLabel: "トライアド",
+            monoLabel: "モノクローム",
+            footer: "ChromaLab - 軽量・高性能カラーツール。",
+            toastCopied: "クリップボードにコピーされました",
+            pass: "AA / AAA",
+            low: "低い"
+        }
+    };
+    let currentLang = 'en';
+
+    function detectBrowserLanguage() {
+        const userLang = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
+        const langCode = userLang.split('-')[0];
+        return translations[langCode] ? langCode : 'en';
+    }
+
+    function changeLanguage(langKey) {
+        if (langKey === 'auto') {
+            currentLang = detectBrowserLanguage();
+        } else {
+            currentLang = langKey;
+        }
+        applyLanguage();
+    }
+
+    function applyLanguage() {
+        const t = translations[currentLang] || translations.en;
+        document.documentElement.lang = currentLang;
+
+        document.getElementById('i18n-subtitle').innerText = t.subtitle;
+        document.getElementById('i18n-selected-color').innerText = t.selectedColor;
+        document.getElementById('i18n-example-palettes').innerText = t.examplePalettes;
+        document.getElementById('i18n-web-formats').innerText = t.webFormats;
+        document.getElementById('i18n-hex-std').innerText = t.hexStd;
+        document.getElementById('i18n-rgb-desc').innerText = t.rgbDesc;
+        document.getElementById('i18n-hsl-desc').innerText = t.hslDesc;
+        document.getElementById('i18n-oklch-desc').innerText = t.oklchDesc;
+        document.querySelectorAll('.i18n-copy-btn').forEach(btn => btn.innerText = t.copyBtn);
+        document.getElementById('i18n-manual-tuning').innerText = t.manualTuning;
+        document.getElementById('i18n-hue-label').innerText = t.hueLabel;
+        document.getElementById('i18n-sat-label').innerText = t.satLabel;
+        document.getElementById('i18n-light-label').innerText = t.lightLabel;
+        document.getElementById('i18n-accessibility-title').innerText = t.accessibilityTitle;
+        document.getElementById('i18n-accessibility-desc').innerText = t.accessibilityDesc;
+        document.getElementById('i18n-white-text-label').innerText = t.whiteTextLabel;
+        document.getElementById('i18n-black-text-label').innerText = t.blackTextLabel;
+        document.getElementById('i18n-harmonies-title').innerText = t.harmoniesTitle;
+        document.getElementById('i18n-comp-label').innerText = t.compLabel;
+        document.getElementById('i18n-analog-label').innerText = t.analogLabel;
+        document.getElementById('i18n-triad-label').innerText = t.triadLabel;
+        document.getElementById('i18n-mono-label').innerText = t.monoLabel;
+        document.getElementById('i18n-footer').innerHTML = t.footer;
+
+        if (currentHsl) {
+            updateAll(currentHsl.h, currentHsl.s, currentHsl.l, false);
+        }
+    }
+
+    const mainPicker = document.getElementById('main-color-picker');
+    const hexInput = document.getElementById('hex-input');
+    const formatHex = document.getElementById('format-hex');
+    const formatRgb = document.getElementById('format-rgb');
+    const formatHsl = document.getElementById('format-hsl');
+    const formatOklch = document.getElementById('format-oklch');
+    const sliderHue = document.getElementById('slider-hue');
+    const sliderSat = document.getElementById('slider-sat');
+    const sliderLight = document.getElementById('slider-light');
+
+    let currentHsl = { h: 239, s: 84, l: 67 };
+
+    function hslToRgb(h, s, l) {
+        s /= 100;
+        l /= 100;
+        const k = n => (n + h / 30) % 12;
+        const a = s * Math.min(l, 1 - l);
+        const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+        return [Math.round(255 * f(0)), Math.round(255 * f(8)), Math.round(255 * f(4))];
+    }
+
+    function rgbToHex(r, g, b) {
+        return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('').toUpperCase();
+    }
+
+    function hexToRgb(hex) {
+        let c = hex.replace('#', '');
+        if (c.length === 3) c = c.split('').map(x => x + x).join('');
+        const num = parseInt(c, 16);
+        return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
+    }
+
+    function rgbToHsl(r, g, b) {
+        r /= 255; g /= 255; b /= 255;
+        const max = Math.max(r, g, b), min = Math.min(r, g, b);
+        let h, s, l = (max + min) / 2;
+        if (max === min) {
+            h = s = 0;
+        } else {
+            const d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch (max) {
+                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                case g: h = (b - r) / d + 2; break;
+                case b: h = (r - g) / d + 4; break;
+            }
+            h /= 6;
+        }
+        return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
+    }
+
+    function rgbToOklch(r, g, b) {
+        let lNorm = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+        let cNorm = Math.min(0.3, Math.abs(r - g) / 500 + Math.abs(g - b) / 500);
+        let hsl = rgbToHsl(r, g, b);
+        return `oklch(${(lNorm * 0.8 + 0.2).toFixed(2)} ${cNorm.toFixed(2)} ${hsl.h})`;
+    }
+
+    function getLuminance(r, g, b) {
+        const a = [r, g, b].map(v => {
+            v /= 255;
+            return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+        });
+        return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
+    }
+
+    function getContrastRatio(rgb1, rgb2) {
+        const lum1 = getLuminance(...rgb1);
+        const lum2 = getLuminance(...rgb2);
+        const brightest = Math.max(lum1, lum2);
+        const darkest = Math.min(lum1, lum2);
+        return (brightest + 0.05) / (darkest + 0.05);
+    }
+    function updateAll(h, s, l, updateSliders = true) {
+        currentHsl = { h, s, l };
+        const t = translations[currentLang] || translations.en;
+        if (updateSliders) {
+            sliderHue.value = h;
+            sliderSat.value = s;
+            sliderLight.value = l;
+            document.getElementById('hue-val').innerText = h + '°';
+            document.getElementById('sat-val').innerText = s + '%';
+            document.getElementById('light-val').innerText = l + '%';
+        }
+        const [r, g, b] = hslToRgb(h, s, l);
+        const hex = rgbToHex(r, g, b);
+        mainPicker.value = hex;
+        hexInput.value = hex;
+        formatHex.innerText = hex;
+        formatRgb.innerText = `rgb(${r}, ${g}, ${b})`;
+        formatHsl.innerText = `hsl(${h}, ${s}%, ${l}%)`;
+        formatOklch.innerText = rgbToOklch(r, g, b);
+        const contrastWhite = getContrastRatio([r, g, b], [255, 255, 255]);
+        const contrastBlack = getContrastRatio([r, g, b], [0, 0, 0]);
+        document.getElementById('ratio-white').innerText = `Ratio: ${contrastWhite.toFixed(1)}:1`;
+        document.getElementById('ratio-black').innerText = `Ratio: ${contrastBlack.toFixed(1)}:1`;
+        document.getElementById('card-white-text').style.backgroundColor = hex;
+        document.getElementById('card-black-text').style.backgroundColor = hex;
+        document.getElementById('badge-white').innerText = contrastWhite >= 4.5 ? t.pass : t.low;
+        document.getElementById('badge-black').innerText = contrastBlack >= 4.5 ? t.pass : t.low;
+        const recElem = document.getElementById('contrast-recommendation');
+        if (contrastWhite >= contrastBlack) {
+            recElem.innerHTML = t.recommendationWhite;
+        } else {
+            recElem.innerHTML = t.recommendationBlack;
+        }
+        updatePalettes(h, s, l);
+    }
+
+    function updatePalettes(h, s, l) {
+        const compH = (h + 180) % 360;
+        const compHex1 = rgbToHex(...hslToRgb(h, s, l));
+        const compHex2 = rgbToHex(...hslToRgb(compH, s, l));
+        document.getElementById('palette-complementary').innerHTML = `
+            <div onclick="setBaseColor('${compHex1}')" class="cursor-pointer transition hover:opacity-90" style="background:${compHex1}"></div>
+            <div onclick="setBaseColor('${compHex2}')" class="cursor-pointer transition hover:opacity-90" style="background:${compHex2}"></div>
+        `;
+        const an1 = (h - 30 + 360) % 360;
+        const an3 = (h + 30) % 360;
+        document.getElementById('palette-analogous').innerHTML = `
+            <div onclick="setBaseColor('${rgbToHex(...hslToRgb(an1, s, l))}')" class="cursor-pointer transition hover:opacity-90" style="background:${rgbToHex(...hslToRgb(an1, s, l))}"></div>
+            <div onclick="setBaseColor('${rgbToHex(...hslToRgb(h, s, l))}')" class="cursor-pointer transition hover:opacity-90" style="background:${rgbToHex(...hslToRgb(h, s, l))}"></div>
+            <div onclick="setBaseColor('${rgbToHex(...hslToRgb(an3, s, l))}')" class="cursor-pointer transition hover:opacity-90" style="background:${rgbToHex(...hslToRgb(an3, s, l))}"></div>
+        `;
+        const tr1 = (h + 120) % 360;
+        const tr2 = (h + 240) % 360;
+        document.getElementById('palette-triadic').innerHTML = `
+            <div onclick="setBaseColor('${rgbToHex(...hslToRgb(h, s, l))}')" class="cursor-pointer transition hover:opacity-90" style="background:${rgbToHex(...hslToRgb(h, s, l))}"></div>
+            <div onclick="setBaseColor('${rgbToHex(...hslToRgb(tr1, s, l))}')" class="cursor-pointer transition hover:opacity-90" style="background:${rgbToHex(...hslToRgb(tr1, s, l))}"></div>
+            <div onclick="setBaseColor('${rgbToHex(...hslToRgb(tr2, s, l))}')" class="cursor-pointer transition hover:opacity-90" style="background:${rgbToHex(...hslToRgb(tr2, s, l))}"></div>
+        `;
+        const l1 = Math.max(15, l - 30);
+        const l2 = Math.max(30, l - 15);
+        const l3 = Math.min(85, l + 15);
+        const l4 = Math.min(95, l + 30);
+        document.getElementById('palette-monochromatic').innerHTML = `
+            <div onclick="setBaseColor('${rgbToHex(...hslToRgb(h, s, l1))}')" class="cursor-pointer transition hover:opacity-90" style="background:${rgbToHex(...hslToRgb(h, s, l1))}"></div>
+            <div onclick="setBaseColor('${rgbToHex(...hslToRgb(h, s, l2))}')" class="cursor-pointer transition hover:opacity-90" style="background:${rgbToHex(...hslToRgb(h, s, l2))}"></div>
+            <div onclick="setBaseColor('${rgbToHex(...hslToRgb(h, s, l3))}')" class="cursor-pointer transition hover:opacity-90" style="background:${rgbToHex(...hslToRgb(h, s, l3))}"></div>
+            <div onclick="setBaseColor('${rgbToHex(...hslToRgb(h, s, l4))}')" class="cursor-pointer transition hover:opacity-90" style="background:${rgbToHex(...hslToRgb(h, s, l4))}"></div>
+        `;
+    }
+
+    function setBaseColor(hex) {
+        const [r, g, b] = hexToRgb(hex);
+        const hsl = rgbToHsl(r, g, b);
+        updateAll(hsl.h, hsl.s, hsl.l, true);
+    }
+
+    function copyToClipboard(text, label) {
+        const t = translations[currentLang] || translations.en;
+        navigator.clipboard.writeText(text);
+        const toast = document.getElementById('toast');
+        document.getElementById('toast-message').innerText = `${label} (${text}) ${t.toastCopied}`;
+        toast.classList.remove('opacity-0', 'translate-y-4');
+        setTimeout(() => {
+            toast.classList.add('opacity-0', 'translate-y-4');
+        }, 2000);
+    }
+
+    mainPicker.addEventListener('input', (e) => setBaseColor(e.target.value));
+    hexInput.addEventListener('input', (e) => {
+        let val = e.target.value;
+        if (val.startsWith('#') && (val.length === 4 || val.length === 7)) {
+            setBaseColor(val);
+        }
+    });
+    [sliderHue, sliderSat, sliderLight].forEach(slider => {
+        slider.addEventListener('input', () => {
+            updateAll(parseInt(sliderHue.value), parseInt(sliderSat.value), parseInt(sliderLight.value), true);
+        });
+    });
+    currentLang = detectBrowserLanguage();
+    applyLanguage();
+    updateAll(239, 84, 67, true);
+</script>
+</body>
+</html>
+
+   
